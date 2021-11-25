@@ -29,6 +29,10 @@ public class Enemy {
     private int maxX;
     private int life = 100;
 
+    private int speed;
+
+    public boolean colisionEnabled = true;
+
     private Context context;
     private Random generator = new Random();
 
@@ -39,12 +43,13 @@ public class Enemy {
         this.maxX = screenX;
         bitmap = BitmapFactory.decodeResource(context.getResources(),R.drawable.enemy);
         this.maxY -= bitmap.getHeight();
-        this.posY =
-        this.posX = maxX + bitmap.getWidth();
+        this.posY = maxY - bitmap.getHeight();
+        this.posX = maxX - bitmap.getWidth();
+        speed = generator.nextInt(7) + 2;
     }
 
-    public boolean validateColision(int posX, int posY, int posX1, int posY1){
-        if(this.posX <= posX && this.posX+bitmap.getWidth() <= posX1 && this.posY <= posY && this.posY+bitmap.getHeight() >= posY1){
+    public boolean validateProjectileColision(int posX, int posY, int posX1, int posY1){
+        if(colisionEnabled && colisionValidate(posX,posY,posX1,posY1)){
             life -= 50;
             if(life <= 0){
                 try {
@@ -62,22 +67,33 @@ public class Enemy {
         return false;
     }
 
+    public boolean colisionValidate(int posX, int posY, int posX1, int posY1){
+        return this.posX <= posX && this.posX+bitmap.getWidth() <= posX1 && this.posY <= posY && this.posY+bitmap.getHeight() >= posY1;
+    }
+
     private void resetEnemy(){
         posY = generator.nextInt(maxY);
         posX = maxX + bitmap.getWidth();
         life = 100;
         bitmap = BitmapFactory.decodeResource(context.getResources(),R.drawable.enemy);
+        speed = generator.nextInt(7) + 2;
+        colisionEnabled = true;
     }
 
     public void update(){
         posX -= 4;
+        posY += Math.cos(generator.nextDouble()) * speed;
         if(posX <= -bitmap.getWidth() - 20){
             resetEnemy();
+        }
+        if(posY < 0 || posY > maxY - bitmap.getHeight()){
+            speed = -speed;
         }
     }
 
     private void explode() throws InterruptedException, ExecutionException, TimeoutException {
         bitmap = BitmapFactory.decodeResource(context.getResources(),R.drawable.boom);
+        colisionEnabled = false;
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.schedule(this::resetEnemy, 2, TimeUnit.SECONDS);
     }

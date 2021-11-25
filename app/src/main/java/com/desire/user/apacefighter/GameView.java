@@ -5,8 +5,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.provider.MediaStore;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -67,6 +72,7 @@ public class GameView extends SurfaceView implements Runnable {
     }
 
         //Class constructor
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public GameView(Context context, int screenX, int screenY) {
         super(context);
         //initializing player object
@@ -98,7 +104,8 @@ public class GameView extends SurfaceView implements Runnable {
             Star s = new Star(screenX, screenY);
             stars.add(s);
         }
-    }   @Override
+    }   @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
         public void run() {
             while (playing) {
                 //to update the frame
@@ -110,6 +117,7 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         private void update() {
             //updating player position
             player.update();
@@ -124,13 +132,23 @@ public class GameView extends SurfaceView implements Runnable {
             int projX1 = projectile.x + projectile.getBitmap().getWidth();
             int projY1 = projectile.y + projectile.getBitmap().getHeight();
 
-            boolean colided = enemy.validateColision(projectile.x,projectile.y,projX1,projY1);
-            if(colided){
+            if(enemy.validateProjectileColision(projectile.x,projectile.y,projX1,projY1)){
                 shooting = false;
                 projectile.x = player.getX() + 300;
                 projectile.y = player.getY() + 75;
+                player.score += 50;
             }
             projectile.update();
+
+            int playerX1,playerY1;
+            playerX1 = player.getX() + player.getBitmap().getWidth();
+            playerY1 = player.getY() + player.getBitmap().getHeight();
+
+            if(enemy.colisionEnabled && enemy.colisionValidate(player.getX(),player.getY(),playerX1,playerY1)){
+                this.playing = false;
+                this.setActivated(false);
+                this.getRootView().setActivated(true);
+            }
 
             //Atualizando as estrelas
             for (Star s : stars){
@@ -138,11 +156,24 @@ public class GameView extends SurfaceView implements Runnable {
             }
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         private void draw() {
             //checking if surface is valid
             if (surfaceHolder.getSurface().isValid()) {
                 //locking the canvas
                 canvas = surfaceHolder.lockCanvas();
+
+                String text = "Score: " + player.score;
+
+                TextPaint textPaint = new TextPaint();
+                textPaint.setAntiAlias(true);
+                textPaint.setTextSize(16 * getResources().getDisplayMetrics().density);
+                textPaint.setColor(0xFF000000);
+
+                int width = (int) textPaint.measureText(text);
+                StaticLayout staticLayout = new StaticLayout(text, textPaint, (int) width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+                staticLayout.draw(canvas);
+
                 //drawing a background color for canvas
                 canvas.drawColor(Color.BLACK);
 

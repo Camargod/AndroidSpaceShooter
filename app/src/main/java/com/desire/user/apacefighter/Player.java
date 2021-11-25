@@ -25,6 +25,8 @@ public class Player {
 
     public MediaPlayer shot;
 
+    public int score = 0;
+
     public Player(Context context, int screenX, int screenY) {
         x = 75;
         y = 50;
